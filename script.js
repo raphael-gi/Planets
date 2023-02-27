@@ -35,6 +35,7 @@ async function createPlanets() {
             console.log(response)
             response.bodies.forEach(planet => {
                 const distance = planet.aphelion / reductionSize
+                const eccentricity = (planet.eccentricity-1)*-1
                 const geometry = new THREE.SphereGeometry(1,16,16 )
                 const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } )
                 const planetMesh = new THREE.Mesh( geometry, material )
@@ -43,7 +44,7 @@ async function createPlanets() {
                 scene.add(planetMesh)
                 const curve = new THREE.EllipseCurve(
                     0,  0,
-                    distance,distance,
+                    distance,distance*eccentricity,
                     0,2*Math.PI,
                     false
                 );
@@ -53,6 +54,7 @@ async function createPlanets() {
                 const curveMaterial = new THREE.LineBasicMaterial( { color: 0xff0000 } );
                 const orbitMesh = new THREE.Line( curveGeometry, curveMaterial );
                 orbitMesh.rotation.x = Math.PI/2
+                orbitMesh.rotation.y = (planet.inclination/360)*Math.PI
                 scene.add(orbitMesh)
             })
         })
