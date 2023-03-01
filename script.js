@@ -12,20 +12,19 @@ async function getSun() {
 }
 const renderer = new THREE.WebGLRenderer();
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 50000000 );
+const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 5000000000 );
 const controls = new OrbitControls( camera, renderer.domElement );
 
-camera.position.set(1000,1000000,1000)
+camera.position.set(1000,100000000,1000)
 controls.update();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 async function createPlanets() {
-    const planetS = 1
-    const reductionSize = 100
+    const planetS = 0.005
     await getSun()
         .then(response => {
             const sun = response.bodies[0]
-            const geometry = new THREE.SphereGeometry(sun.meanRadius/10, 16, 16)
+            const geometry = new THREE.SphereGeometry(sun.meanRadius, 16, 16)
             const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 })
             const sunMesh = new THREE.Mesh(geometry, material)
             scene.add(sunMesh)
@@ -34,32 +33,40 @@ async function createPlanets() {
         .then(response => {
             console.log(response)
             response.bodies.forEach(planet => {
-                const distance = planet.aphelion / reductionSize
+                const offset = planet.aphelion - planet.perihelion
                 const eccentricity = (planet.eccentricity-1)*-1
                 const geometry = new THREE.SphereGeometry(1,16,16 )
                 const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } )
                 const planetMesh = new THREE.Mesh( geometry, material )
                 planetMesh.scale.set(planet.equaRadius/planetS,planet.polarRadius/planetS,planet.equaRadius/planetS)
-                planetMesh.position.x = distance
                 scene.add(planetMesh)
                 const curve = new THREE.EllipseCurve(
-                    0,  0,
-                    distance,distance*eccentricity,
+                    offset,  0,
+                    planet.semimajorAxis,planet.semimajorAxis*eccentricity,
                     0,2*Math.PI,
                     false
                 );
-                const points = curve.getPoints( 50 );
-                const curveGeometry = new THREE.BufferGeometry().setFromPoints( points );
-
+                const points = curve.getPoints(100);
+                const curveGeometry = new THREE.BufferGeometry().setFromPoints(points);
                 const curveMaterial = new THREE.LineBasicMaterial( { color: 0xff0000 } );
                 const orbitMesh = new THREE.Line( curveGeometry, curveMaterial );
                 orbitMesh.rotation.x = Math.PI/2
                 orbitMesh.rotation.y = (planet.inclination/360)*Math.PI
+                const test = curve.getPoint(0)
+                console.log(test)
+                planetMesh.position.set(test.x, 0, test.y)
                 scene.add(orbitMesh)
             })
         })
 }
 createPlanets()
+
+const plane = new THREE.PlaneGeometry(10000000000,10000000000)
+const material = new THREE.MeshBasicMaterial( { color: 0x00ff00, side: THREE.DoubleSide } )
+const planeOfReference = new THREE.Mesh(plane, material)
+planeOfReference.rotation.x = Math.PI/2
+//scene.add(planeOfReference)
+
 
 function animate() {
     requestAnimationFrame( animate );
